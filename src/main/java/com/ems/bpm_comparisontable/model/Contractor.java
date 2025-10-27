@@ -3,9 +3,11 @@ package com.ems.bpm_comparisontable.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
+@ToString
 @Getter
 @Setter
 @Entity

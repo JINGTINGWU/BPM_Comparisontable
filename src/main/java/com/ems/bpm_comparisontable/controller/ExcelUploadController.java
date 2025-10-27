@@ -59,8 +59,6 @@ public class ExcelUploadController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("userId") String userId,
             @RequestParam("type") String type) {
-        System.out.println(userId);
-        System.out.println(type);
         Map<String, Object> response = new HashMap<>();
         UploadExcelType uploadExcelType = UploadExcelType.Unknown;
         OperationType operationType = OperationType.Unknown;
@@ -157,11 +155,10 @@ public class ExcelUploadController {
             response.put("filename", newFilename);
             response.put("filepath", filePath.toString());
             response.put("size", file.getSize());
-            System.out.println(result.getProjectId() != null);
             if(result.getProjectId() != null) {
                 response.put("projectAllData", projectDataService.getProjectAllData(result.getProjectId()));
             }
-            System.out.println(response);
+//            System.out.println(response);
 
             return ResponseEntity.ok(response);
 

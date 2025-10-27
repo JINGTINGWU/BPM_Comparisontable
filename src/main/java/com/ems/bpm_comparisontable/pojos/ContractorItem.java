@@ -7,7 +7,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class ContractorContractItem {
+public class ContractorItem {
     /** 項次 */
     private String item;
 
@@ -25,8 +25,5 @@ public class ContractorContractItem {
 
     /** 複價 */
     private String complexPrice;
-
-    /** 顯示順序 */
-    private int sequence;
 
 }
