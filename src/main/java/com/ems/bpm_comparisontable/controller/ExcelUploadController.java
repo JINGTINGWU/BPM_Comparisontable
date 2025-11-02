@@ -5,7 +5,7 @@ import com.ems.bpm_comparisontable.enums.UploadExcelType;
 import com.ems.bpm_comparisontable.model.OperationHistory;
 import com.ems.bpm_comparisontable.pojos.ParseExcelResult;
 import com.ems.bpm_comparisontable.repository.OperationHistoryRepository;
-import com.ems.bpm_comparisontable.service.ExcelService;
+import com.ems.bpm_comparisontable.service.ExcelParseService;
 import com.ems.bpm_comparisontable.service.ProjectDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,7 +44,7 @@ public class ExcelUploadController {
     private OperationHistoryRepository operationHistoryRepository;
 
     @Autowired
-    private ExcelService excelService;
+    private ExcelParseService excelParseService;
 
     @Autowired
     private ProjectDataService projectDataService;
@@ -132,7 +132,7 @@ public class ExcelUploadController {
             }
 
             // 6.1 解析EXCEL、儲存至資料庫
-            ParseExcelResult result = excelService.parseAndSaveExcelFile(filePath.toFile(), uploadExcelType, userId);
+            ParseExcelResult result = excelParseService.parseAndSaveExcelFile(filePath.toFile(), uploadExcelType, userId);
 
             // 6.2 記錄操作至DB
             OperationHistory history = new OperationHistory();

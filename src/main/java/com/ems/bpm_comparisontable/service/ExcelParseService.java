@@ -4,7 +4,6 @@ import com.ems.bpm_comparisontable.enums.UploadExcelType;
 import com.ems.bpm_comparisontable.model.Contractor;
 import com.ems.bpm_comparisontable.model.Project;
 import com.ems.bpm_comparisontable.pojos.*;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -17,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class ExcelService {
+public class ExcelParseService {
 
     @Autowired
     private ProjectDataService projectDataService;
@@ -280,49 +279,4 @@ public class ExcelService {
         }
     }
 
-    public ByteArrayOutputStream generateExcel(String projectName) throws Exception {
-        // 建立工作簿
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("專案報告");
-
-        // 建立標題列
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"序號", "專案名稱", "項目", "狀態", "建立時間"};
-
-        // 設定標題樣式
-        CellStyle headerStyle = workbook.createCellStyle();
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        headerStyle.setFont(headerFont);
-        headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerStyle);
-        }
-
-        // 加入範例資料
-        for (int i = 1; i <= 10; i++) {
-            Row row = sheet.createRow(i);
-            row.createCell(0).setCellValue(i);
-            row.createCell(1).setCellValue(projectName);
-            row.createCell(2).setCellValue("項目 " + i);
-            row.createCell(3).setCellValue("進行中");
-            row.createCell(4).setCellValue(new Date().toString());
-        }
-
-        // 自動調整欄寬
-        for (int i = 0; i < headers.length; i++) {
-            sheet.autoSizeColumn(i);
-        }
-
-        // 寫入到 ByteArrayOutputStream
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        workbook.write(outputStream);
-        workbook.close();
-
-        return outputStream;
-    }
 }

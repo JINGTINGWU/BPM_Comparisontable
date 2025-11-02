@@ -106,6 +106,15 @@ public class ProjectDataService {
         }
     }
 
+    public Optional<ReturnProjectAllData> getProjectAllData(String projectName) {
+        Optional<Project> optProject = projectRepository.findByProjectName(projectName);
+        if(optProject.isPresent()) {
+            return  getProjectAllData(optProject.get().getId());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public void removeContractorContractItems(int projectId, int contractorId){
         System.out.println("projectId:"+projectId+" contractorId:"+contractorId);
         contractorContractItemRepository.removeAll(projectId, contractorId);
