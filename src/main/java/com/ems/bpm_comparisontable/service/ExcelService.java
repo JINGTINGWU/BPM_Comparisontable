@@ -4,15 +4,14 @@ import com.ems.bpm_comparisontable.enums.UploadExcelType;
 import com.ems.bpm_comparisontable.model.Contractor;
 import com.ems.bpm_comparisontable.model.Project;
 import com.ems.bpm_comparisontable.pojos.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -281,37 +280,49 @@ public class ExcelService {
         }
     }
 
-    private byte[] generateExcel(ExcelRequest request) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+    public ByteArrayOutputStream generateExcel(String projectName) throws Exception {
+        // 建立工作簿
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("專案報告");
 
-            Sheet sheet = workbook.createSheet("報表");
+        // 建立標題列
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"序號", "專案名稱", "項目", "狀態", "建立時間"};
 
-            // 建立標題
-            Row headerRow = sheet.createRow(0);
-            headerRow.createCell(0).setCellValue("編號");
-            headerRow.createCell(1).setCellValue("姓名");
-            headerRow.createCell(2).setCellValue("部門");
-            headerRow.createCell(3).setCellValue("薪資");
+        // 設定標題樣式
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // 加入範例資料
-            List<Employee> data = getEmployeeData();
-            int rowNum = 1;
-            for (Employee emp : data) {
-                Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(emp.getId());
-                row.createCell(1).setCellValue(emp.getName());
-                row.createCell(2).setCellValue(emp.getDepartment());
-                row.createCell(3).setCellValue(emp.getSalary());
-            }
-
-            // 自動調整欄寬
-            for (int i = 0; i < 4; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            workbook.write(baos);
-            return baos.toByteArray();
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
         }
+
+        // 加入範例資料
+        for (int i = 1; i <= 10; i++) {
+            Row row = sheet.createRow(i);
+            row.createCell(0).setCellValue(i);
+            row.createCell(1).setCellValue(projectName);
+            row.createCell(2).setCellValue("項目 " + i);
+            row.createCell(3).setCellValue("進行中");
+            row.createCell(4).setCellValue(new Date().toString());
+        }
+
+        // 自動調整欄寬
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // 寫入到 ByteArrayOutputStream
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+
+        return outputStream;
     }
 }
