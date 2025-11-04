@@ -40,6 +40,11 @@ public class ExcelUploadController {
     @Value("${uploadFolder.excel.ContractorContract}")
     private String UPLOAD_DIR_ContractorContract;
 
+    @Value("${uploadFolder.excel.AppendWorkItems}")
+    private String UPLOAD_DIR_AppendWorkItems;
+
+
+
     @Autowired
     private OperationHistoryRepository operationHistoryRepository;
 
@@ -58,7 +63,8 @@ public class ExcelUploadController {
     public ResponseEntity<Map<String, Object>> uploadExcel(
             @RequestParam("file") MultipartFile file,
             @RequestParam("userId") String userId,
-            @RequestParam("type") String type) {
+            @RequestParam("type") String type,
+            @RequestParam("selectedProjectName") String selectedProjectName) {
         Map<String, Object> response = new HashMap<>();
         UploadExcelType uploadExcelType = UploadExcelType.Unknown;
         OperationType operationType = OperationType.Unknown;
@@ -85,13 +91,16 @@ public class ExcelUploadController {
             String UPLOAD_DIR = null;
             if("ContractorContract".equals(type) ||
                     "OwnerContract".equals(type) ||
-                    "SettlementDetails".equals(type))
+                    "SettlementDetails".equals(type) ||
+                    "AppendWorkItems".equals(type))
             {
                 File uploadDirFile = null;
                 if("ContractorContract".equals(type)){
                     UPLOAD_DIR = UPLOAD_DIR_ContractorContract;
                 } else if("OwnerContract".equals(type)){
                     UPLOAD_DIR = UPLOAD_DIR_OwnerContract;
+                } else if("AppendWorkItems".equals(type)){ //追加工項
+                    UPLOAD_DIR = UPLOAD_DIR_AppendWorkItems;
                 } else {
                     UPLOAD_DIR = UPLOAD_DIR_SettlementDetails;
                 }
@@ -129,10 +138,14 @@ public class ExcelUploadController {
                     uploadExcelType = UploadExcelType.SettlementDetails;
                     operationType = OperationType.UPLOAD_EXCEL_SettlementDetails;
                     break;
+                case "AppendWorkItems": //追加工項
+                    uploadExcelType = UploadExcelType.AppendWorkItems;
+                    operationType = OperationType.UPLOAD_EXCEL_AppendWorkItems;
+                    break;
             }
 
             // 6.1 解析EXCEL、儲存至資料庫
-            ParseExcelResult result = excelParseService.parseAndSaveExcelFile(filePath.toFile(), uploadExcelType, userId);
+            ParseExcelResult result = excelParseService.parseAndSaveExcelFile(selectedProjectName, filePath.toFile(), uploadExcelType, userId);
 
             // 6.2 記錄操作至DB
             OperationHistory history = new OperationHistory();

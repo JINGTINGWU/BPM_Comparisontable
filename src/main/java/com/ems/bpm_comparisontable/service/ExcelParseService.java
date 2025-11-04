@@ -23,7 +23,16 @@ public class ExcelParseService {
 
     FormulaEvaluator evaluator = null;
 
-    public ParseExcelResult parseAndSaveExcelFile(File file, UploadExcelType type, String userId) throws IOException, IllegalArgumentException {
+    /**
+     * 解析Excel並儲存至資料庫
+     * @param file
+     * @param type
+     * @param userId
+     * @return
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
+    public ParseExcelResult parseAndSaveExcelFile(String projectName, File file, UploadExcelType type, String userId) throws IOException, IllegalArgumentException {
         ParseExcelResult result = new ParseExcelResult();
 
         try (InputStream is = Files.newInputStream(file.toPath())) {
@@ -40,9 +49,9 @@ public class ExcelParseService {
             }
             evaluator = workbook.getCreationHelper().createFormulaEvaluator();
 
-            if(type == UploadExcelType.OwnerContract) {
+            if(type == UploadExcelType.OwnerContract) { //業主合約
                 result = parseOwnerContract(workbook, userId);
-            } else if(type == UploadExcelType.ContractorContract) {
+            } else if(type == UploadExcelType.ContractorContract) { //廠商合約
                 String contractorName = fileName.replace(".xlsx", "").replace(".xls", "");
                 if(!contractorName.endsWith("_簽約單價")) {
                     result.setSuccess(false);
@@ -51,13 +60,21 @@ public class ExcelParseService {
                     System.out.println(contractorName);
                     contractorName = contractorName.split("_")[2];
                     Contractor contractor = projectDataService.saveContractor(contractorName, userId);
-                    result = parseContractorContract(workbook, userId, contractor);
+                    result = parseContractorContract(workbook, projectName, userId, contractor);
+                }
+            } else if(type == UploadExcelType.AppendWorkItems){ //追加工項
+                if(!fileName.replace(".xlsx", "").replace(".xls", "").endsWith("_追加工項")) {
+                    result.setSuccess(false);
+                    result.setMessage("檔名必須是「_追加工項」結尾");
+                } else {
+                    result = parseAppendWorkItems(workbook, projectName, userId);
                 }
             }
 
             workbook.close();
             if(type == UploadExcelType.OwnerContract ||
-                    type == UploadExcelType.ContractorContract) {
+                    type == UploadExcelType.ContractorContract||
+                    type == UploadExcelType.AppendWorkItems) {
                 return result;
             }
         }
@@ -67,6 +84,8 @@ public class ExcelParseService {
             result.setMessage("上傳的Excel檔案不是「包商合約」");
         } else if(type == UploadExcelType.SettlementDetails) {
             result.setMessage("上傳的Excel檔案不是「結算明細」");
+        } else if(type == UploadExcelType.AppendWorkItems) {
+            result.setMessage("上傳的Excel檔案不是「追加工項」");
         }
         return result;
     }
@@ -119,43 +138,90 @@ public class ExcelParseService {
         return result;
     }
 
-    private ParseExcelResult parseContractorContract(Workbook workbook, String userId, Contractor contractor){
+    private ParseExcelResult parseContractorContract(Workbook workbook, String projectName, String userId, Contractor contractor){
         ParseExcelResult result = new ParseExcelResult();
         Sheet sheet = workbook.getSheetAt(0);
         ContractorContract cc = parseContractorContract(sheet);
 
         if(!cc.getItems().isEmpty() && cc.getProjectName() != null) {
-            System.out.println(cc.getProjectName());
-            Optional<Project> optProject = projectDataService.findProject(cc.getProjectName());
-            if(optProject.isEmpty()) {
+            if(cc.getProjectName().equals(projectName)) {
+                System.out.println(cc.getProjectName());
+                Optional<Project> optProject = projectDataService.findProject(cc.getProjectName());
+                if(optProject.isEmpty()) {
+                    result.setSuccess(false);
+                    result.setMessage("查無此專案：" + cc.getProjectName());
+                    return result;
+                }
+
+                result.setSuccess(true);
+                LocalDateTime now = LocalDateTime.now();
+                Project project = optProject.get();
+
+
+                projectDataService.removeContractorContractItems(project.getId(), contractor.getId());
+
+                // 儲存 item
+                System.out.println("cc.getItems().size():"+cc.getItems().size());
+                int index = 0;
+                for(int i=0; i<cc.getItems().size(); i++) {
+                    if("合計".equals(cc.getItems().get(i).getItemDescription()) ||
+                            "稅額".equals(cc.getItems().get(i).getItemDescription()) ||
+                            "總計".equals(cc.getItems().get(i).getItemDescription()) ) {
+                        continue;
+                    }
+                    projectDataService.createNewContractorContractItem(project.getId(), contractor.getId(), ++index, cc.getItems().get(i), userId, now);
+                }
+
+                result.setMessage("檔案上傳成功");
+                result.setProjectId(project.getId());
+
+                return result;
+            } else {
                 result.setSuccess(false);
-                result.setMessage("查無此專案：" + cc.getProjectName());
+                result.setMessage("Excel的專案名稱和目前處理的不同");
                 return result;
             }
-
-            result.setSuccess(true);
-            LocalDateTime now = LocalDateTime.now();
-            Project project = optProject.get();
-
-
-            projectDataService.removeContractorContractItems(project.getId(), contractor.getId());
-
-            // 儲存 item
-            System.out.println("cc.getItems().size():"+cc.getItems().size());
-            int index = 0;
-            for(int i=0; i<cc.getItems().size(); i++) {
-                if("合計".equals(cc.getItems().get(i).getItemDescription()) ||
-                        "稅額".equals(cc.getItems().get(i).getItemDescription()) ||
-                        "總計".equals(cc.getItems().get(i).getItemDescription()) ) {
-                  continue;
-                }
-                projectDataService.createNewContractorContractItem(project.getId(), contractor.getId(), ++index, cc.getItems().get(i), userId, now);
-            }
-
-            result.setMessage("檔案上傳成功");
-            result.setProjectId(project.getId());
-
+        } else {
+            result.setSuccess(false);
+            result.setMessage("解析「廠商簽約」無法取得資料");
             return result;
+        }
+    }
+
+    private ParseExcelResult parseAppendWorkItems(Workbook workbook, String projectName, String userId){
+        ParseExcelResult result = new ParseExcelResult();
+        Sheet sheet = workbook.getSheetAt(0);
+        ContractorContract cc = parseAppendWorkItems(sheet);
+
+        if(!cc.getItems().isEmpty() && cc.getProjectName() != null) {
+            if(cc.getProjectName().equals(projectName)) {
+                System.out.println(cc.getProjectName());
+                Optional<Project> optProject = projectDataService.findProject(cc.getProjectName());
+                if(optProject.isEmpty()) {
+                    result.setSuccess(false);
+                    result.setMessage("查無此專案：" + cc.getProjectName());
+                    return result;
+                }
+
+                result.setSuccess(true);
+                LocalDateTime now = LocalDateTime.now();
+                Project project = optProject.get();
+
+                // 儲存 item
+                int index = 0;
+                for(int i=0; i<cc.getItems().size(); i++) {
+                    projectDataService.createNewAppendWorkItem(project.getId(), cc.getItems().get(i), userId, now);
+                }
+
+                result.setMessage("檔案上傳成功");
+                result.setProjectId(project.getId());
+
+                return result;
+            } else {
+                result.setSuccess(false);
+                result.setMessage("Excel的專案名稱和目前處理的不同");
+                return result;
+            }
         } else {
             result.setSuccess(false);
             result.setMessage("解析「廠商簽約」無法取得資料");
@@ -234,6 +300,35 @@ public class ExcelParseService {
                 item.setQuantity(getCellValue(sheet.getRow(i).getCell(3)));
                 item.setUnitPrice(getCellValue(sheet.getRow(i).getCell(4)));
                 item.setComplexPrice(getCellValue(sheet.getRow(i).getCell(5)));
+                items.add(item);
+            }
+        }
+
+        ContractorContract cc = new ContractorContract();
+        cc.setItems(items);
+        cc.setProjectName(projectName);
+        return cc;
+    }
+
+    private ContractorContract parseAppendWorkItems(Sheet sheet) {
+        LinkedList<ContractorItem> items = new LinkedList<>();
+
+        int lastRowNum = sheet.getLastRowNum();
+        String projectName = null;
+        for(int i = 0; i < lastRowNum; i++) {
+            ContractorItem item = new ContractorItem();
+            item.setItem(getCellValue(sheet.getRow(i).getCell(0)).replaceAll(" ", ""));
+            item.setItemDescription(getCellValue(sheet.getRow(i).getCell(1)));
+
+            if(item.getItemDescription().isEmpty()) {
+                continue;
+            } else if("施工地點".equals(item.getItem()) || "名稱".equals(item.getItem())){
+                continue;
+            } else if("工程名稱".equals(item.getItem())){
+                projectName = getCellValue(sheet.getRow(i).getCell(1));
+            } else {
+                item.setItemDescription(getCellValue(sheet.getRow(i).getCell(0)));
+                item.setUnitPrice(getCellValue(sheet.getRow(i).getCell(1)));
                 items.add(item);
             }
         }

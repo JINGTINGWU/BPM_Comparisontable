@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Optional;
 
 @CrossOrigin(
         origins = "http://localhost:63343",  // 或指定特定域名 {"http://localhost:3000", "http://localhost:8080"}
@@ -32,18 +33,21 @@ public class ExcelDownloadController {
                                                 HttpServletResponse response) {
         try {
             // 生成 Excel
-            ByteArrayOutputStream outputStream = excelCreateService.generateExcel(request.getProjectName());
+            Optional<ByteArrayOutputStream> optOutputStream = excelCreateService.generateExcel(request.getProjectName());
+            if(optOutputStream.isPresent()) {
+                ByteArrayOutputStream outputStream = optOutputStream.get();
+                // 設定響應標頭
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                headers.setContentDispositionFormData("attachment",
+                        "對應表.xlsx");
 
-            // 設定響應標頭
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDispositionFormData("attachment",
-                    request.getProjectName() + "_report.xlsx");
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(outputStream.toByteArray());
-
+                return ResponseEntity.ok()
+                        .headers(headers)
+                        .body(outputStream.toByteArray());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();

@@ -1,14 +1,8 @@
 package com.ems.bpm_comparisontable.service;
 
-import com.ems.bpm_comparisontable.model.Contractor;
-import com.ems.bpm_comparisontable.model.Project;
-import com.ems.bpm_comparisontable.model.ProjectItem;
-import com.ems.bpm_comparisontable.model.ContractorContractItem;
+import com.ems.bpm_comparisontable.model.*;
 import com.ems.bpm_comparisontable.pojos.*;
-import com.ems.bpm_comparisontable.repository.ContractorContractItemRepository;
-import com.ems.bpm_comparisontable.repository.ContractorRepository;
-import com.ems.bpm_comparisontable.repository.ProjectItemRepository;
-import com.ems.bpm_comparisontable.repository.ProjectRepository;
+import com.ems.bpm_comparisontable.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +23,9 @@ public class ProjectDataService {
 
     @Autowired
     private ContractorContractItemRepository contractorContractItemRepository;
+
+    @Autowired
+    private ProjectAppentItemRepository projectAppentItemRepository;
 
     public Project createNewProject(OwnerContractHeader ownerContract, String amount, String userId, LocalDateTime now) {
         Project project = new Project();
@@ -119,4 +116,13 @@ public class ProjectDataService {
         System.out.println("projectId:"+projectId+" contractorId:"+contractorId);
         contractorContractItemRepository.removeAll(projectId, contractorId);
     }
+
+    public ProjectAppendItem createNewAppendWorkItem(int projectId, ContractorItem contractorItem, String userId, LocalDateTime now) {
+        ProjectAppendItem item = new ProjectAppendItem(projectId, contractorItem);
+        item.setCreatedBy(userId);
+        item.setCreatedDate(now);
+        return projectAppentItemRepository.save(item);
+    }
+
+
 }
