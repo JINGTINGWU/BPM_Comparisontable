@@ -32,6 +32,7 @@ public class DataController {
     public ResponseEntity<Map<String, Object>> getProjectAllData(
             @RequestParam("userId") String userId,
             @RequestParam("projectId") int projectId) {
+        System.out.println("A");
         Map<String, Object> response = new HashMap<>();
 
         Optional<ReturnProjectAllData> optReturnProjectAllData = projectDataService.getProjectAllData(projectId);
@@ -53,6 +54,7 @@ public class DataController {
     public ResponseEntity<Map<String, Object>> aaa(
             @RequestParam("userId") String userId,
             @RequestParam("projectId") int projectId) {
+        System.out.println("B");
         Map<String, Object> response = new HashMap<>();
 
         Optional<ReturnProjectData> optReturnProjectData = getProjectDataService.getProjectAllData(projectId);

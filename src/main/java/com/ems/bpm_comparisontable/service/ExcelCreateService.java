@@ -136,15 +136,15 @@ public class ExcelCreateService {
                 .map(ReturnProjectItem::getItemDescription)
                 .collect(Collectors.toSet());
         // 包商
-        List<ReturnContractor>  contractors =  allData.getContractors();
+        List<ReturnProjectContractor>  contractors =  allData.getContractors();
         // 包商合約項目
-        Map<Integer, List<ReturnContractorContractItem>> contractorContractItemMap = allData.getContractorContractItemMap();
+        Map<Integer, List<ReturnProjectContractorContractItem>> contractorContractItemMap = allData.getContractorContractItemMap();
 
         Set<String> appendItemDescriptions = new LinkedHashSet<>();
-        for (ReturnContractor contractor : contractors) {
-            List<ReturnContractorContractItem> contractItems = contractorContractItemMap.get(contractor.getId());
+        for (ReturnProjectContractor contractor : contractors) {
+            List<ReturnProjectContractorContractItem> contractItems = contractorContractItemMap.get(contractor.getId());
             System.out.println("contractItems.size:" + contractItems.size());
-            for (ReturnContractorContractItem obj : contractItems) {
+            for (ReturnProjectContractorContractItem obj : contractItems) {
                 if (!projectItemDescriptions.contains(obj.getItemDescription())) {
                     appendItemDescriptions.add(obj.getItemDescription());
                 }

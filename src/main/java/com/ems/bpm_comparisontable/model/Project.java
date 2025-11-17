@@ -32,7 +32,7 @@ public class Project {
     /**
      * 工程名稱
      */
-    @Column(name = "project_name")
+    @Column(name = "project_name", nullable = false)
     private String projectName;
 
     /**
@@ -51,6 +51,9 @@ public class Project {
      * 業主合約總額
      */
     private String amount;
+
+    @Column(nullable = false)
+    private String enabled;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;

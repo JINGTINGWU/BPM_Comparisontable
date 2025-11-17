@@ -7,13 +7,13 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class ReturnContractor {
+public class ReturnProjectContractor {
 
     private Integer id;
 
     private String name;
 
-    public ReturnContractor(Integer id, String name) {
+    public ReturnProjectContractor(Integer id, String name) {
         this.id = id;
         this.name = name;
     }

@@ -25,13 +25,17 @@ public class ProjectDataService {
     private ContractorContractItemRepository contractorContractItemRepository;
 
     @Autowired
-    private ProjectAppentItemRepository projectAppentItemRepository;
+    private ProjectAppentItemHeadRepository projectAppentItemHeadRepository;
+
+    @Autowired
+    private ProjectAppentItemBodyRepository projectAppentItemBodyRepository;
 
     public Project createNewProject(OwnerContractHeader ownerContract, String amount, String userId, LocalDateTime now) {
         Project project = new Project();
         project.setProjectName(ownerContract.getProjectName());
         project.setConstructionSite(ownerContract.getConstructionSite());
         project.setAmount(amount);
+        project.setEnabled("Y");
         project.setCreatedBy(userId);
         project.setCreatedDate(now);
         return projectRepository.save(project);
@@ -79,24 +83,48 @@ public class ProjectDataService {
             projectAllData.setProjectItems(projectItems.stream()
                     .map(ReturnProjectItem::new)
                     .collect(Collectors.toList()));
+
+            List<LinkedList<String>> bodyDetail = new LinkedList<>();
+            for(ReturnProjectItem item: projectAllData.getProjectItems()) {
+                LinkedList<String> detail = new LinkedList<>();
+                detail.add(item.getItem());//項 次
+                detail.add(item.getItemDescription()); //項 目 及 說 明
+                detail.add(item.getItemDescription()); //單 位
+                detail.add(item.getItemDescription()); //數 量
+                detail.add(item.getItemDescription()); //單 價
+                detail.add(item.getItemDescription()); //複 價
+                detail.add(item.getItemDescription()); //備 註
+                bodyDetail.add(detail);
+            }
+
+
+            //追加工項
+            List<ProjectAppendItemHead> appendItemHeads = projectAppentItemHeadRepository.findAllByProjectIdAndEnabled(projectId, true);
+            projectAllData.setAppendItemHeads(appendItemHeads.stream()
+                    .map(a -> new ReturnProjectAppendItemHead(a.getId(), a.getCreatedBy(), a.getCreatedDate()))
+                    .collect(Collectors.toList()));
+            //projectAppentItemBodyRepository;
+
+
             //包商
             List<Contractor> contractors = contractorRepository.getAllContractorsOfProject(projectId);
             projectAllData.setContractors(contractors.stream()
-                    .map(a -> new ReturnContractor(a.getId(), a.getName()))
+                    .map(a -> new ReturnProjectContractor(a.getId(), a.getName()))
                     .collect(Collectors.toList()));
             //包商合約項目
-            Map<Integer, List<ReturnContractorContractItem>> returnContractorContractItemMap = new HashMap<>();
+            Map<Integer, List<ReturnProjectContractorContractItem>> returnContractorContractItemMap = new HashMap<>();
             for(Contractor contractor : contractors) {
                 returnContractorContractItemMap.put(
                         contractor.getId(),
                         contractorContractItemRepository
                                 .getContractorContractItem(projectId, contractor.getId()).stream()
-                                .map(ReturnContractorContractItem::new)
+                                .map(ReturnProjectContractorContractItem::new)
                                 .collect(Collectors.toList())
                         );
             }
             projectAllData.setContractorContractItemMap(returnContractorContractItemMap);
 
+            projectAllData.setBodyDetail(bodyDetail);
             return Optional.of(projectAllData);
         } else {
             return Optional.empty();
@@ -117,11 +145,29 @@ public class ProjectDataService {
         contractorContractItemRepository.removeAll(projectId, contractorId);
     }
 
-    public ProjectAppendItem createNewAppendWorkItem(int projectId, ContractorItem contractorItem, String userId, LocalDateTime now) {
-        ProjectAppendItem item = new ProjectAppendItem(projectId, contractorItem);
-        item.setCreatedBy(userId);
-        item.setCreatedDate(now);
-        return projectAppentItemRepository.save(item);
+    public void createProjectAppentItem(Project project, List<ContractorItem> items, String userId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        ProjectAppendItemHead head = new ProjectAppendItemHead();
+        head.setProjectId(project.getId());
+        head.setEnabled(true);
+        head.setCreatedBy(userId);
+        head.setCreatedDate(now);
+
+        ProjectAppendItemHead savedHead = projectAppentItemHeadRepository.save(head);
+        System.out.println("savedHead:"+savedHead.getId());
+        for (ContractorItem item : items) {
+            ProjectAppendItemBodyId id = new ProjectAppendItemBodyId();
+            id.setHeadId(savedHead.getId());
+            id.setItemDescription(item.getItemDescription());
+
+            ProjectAppendItemBody body = new ProjectAppendItemBody();
+            body.setId(id);
+            body.setUnitPrice(item.getUnitPrice());
+            body.setCreatedBy(userId);
+            body.setCreatedDate(now);
+            projectAppentItemBodyRepository.save(body);
+        }
     }
 
 

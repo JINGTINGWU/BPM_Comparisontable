@@ -4,36 +4,28 @@ import com.ems.bpm_comparisontable.model.Project;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.LinkedList;
+import java.util.List;
+
 @Getter
 @Setter
 public class ReturnProjectData {
-    private String projectNo;
 
-    /** PMS專案案號 */
-    private String pmsProjectNo;
+    private ReturnProjectMain project;
 
-    /** 工程名稱 */
-    private String projectName;
+    /** 追加工項Head */
+    private List<ReturnProjectAppendItemHead> appendItemHeads;
 
-    /** 工程編號 */
-    private String projectNumber;
+    /** 包商Head */
+    private List<ReturnProjectContractor> contractors;
 
-    /** 施工地點 */
-    private String constructionSite;
+    private List<LinkedList<String>> bodyDetail;
 
-    /** 業主合約總額 */
-    private String amount;
 
-    private String[] items;
 
     public ReturnProjectData(){}
 
     public void loadProject(Project project){
-        this.projectNo = project.getProjectNo();
-        this.pmsProjectNo = project.getPmsProjectNo();
-        this.projectName = project.getProjectName();
-        this.projectNumber = project.getProjectNumber();
-        this.constructionSite = project.getConstructionSite();
-        this.amount = project.getAmount();
+        this.project = new ReturnProjectMain(project);
     }
 }

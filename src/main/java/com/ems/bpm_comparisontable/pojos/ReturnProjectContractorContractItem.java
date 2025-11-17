@@ -8,7 +8,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class ReturnContractorContractItem {
+public class ReturnProjectContractorContractItem {
 
     private int contractorId;
 
@@ -30,7 +30,7 @@ public class ReturnContractorContractItem {
     /** 複價 */
     private String complexPrice;
 
-    public ReturnContractorContractItem(ContractorContractItem item) {
+    public ReturnProjectContractorContractItem(ContractorContractItem item) {
         this.contractorId = item.getId().getContractorId();
         this.item = item.getItem();
         this.itemDescription = item.getId().getItemDescription();

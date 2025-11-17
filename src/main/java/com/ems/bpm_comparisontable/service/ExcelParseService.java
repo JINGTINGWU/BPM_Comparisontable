@@ -3,6 +3,7 @@ package com.ems.bpm_comparisontable.service;
 import com.ems.bpm_comparisontable.enums.UploadExcelType;
 import com.ems.bpm_comparisontable.model.Contractor;
 import com.ems.bpm_comparisontable.model.Project;
+import com.ems.bpm_comparisontable.model.ProjectAppendItemHead;
 import com.ems.bpm_comparisontable.pojos.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
@@ -188,6 +189,13 @@ public class ExcelParseService {
         }
     }
 
+    /**
+     * 追加工項
+     * @param workbook
+     * @param projectName
+     * @param userId
+     * @return
+     */
     private ParseExcelResult parseAppendWorkItems(Workbook workbook, String projectName, String userId){
         ParseExcelResult result = new ParseExcelResult();
         Sheet sheet = workbook.getSheetAt(0);
@@ -207,11 +215,7 @@ public class ExcelParseService {
                 LocalDateTime now = LocalDateTime.now();
                 Project project = optProject.get();
 
-                // 儲存 item
-                int index = 0;
-                for(int i=0; i<cc.getItems().size(); i++) {
-                    projectDataService.createNewAppendWorkItem(project.getId(), cc.getItems().get(i), userId, now);
-                }
+                projectDataService.createProjectAppentItem(project, cc.getItems(), userId);
 
                 result.setMessage("檔案上傳成功");
                 result.setProjectId(project.getId());
